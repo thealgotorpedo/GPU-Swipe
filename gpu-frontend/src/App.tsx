@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Navigate, Routes } from "react-router-d
 import "./App.css";
 
 import LoginPage from "./pages/LoginPage";
+import PasswordPage from "./pages/PasswordPage";
 import ListingPage from "./pages/ListingPage";
 import Marketplace from "./components/Marketplace";
 import ListingUI from "./components/ListingUI";
@@ -19,6 +20,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<PasswordPage />} />
+        <Route path="/reset-password" element={<PasswordPage reset />} />
         <Route path="/listings" element={<RequireLogin><ListingsPage /></RequireLogin>}>
           <Route index element={<Marketplace />} />
           <Route path=":listingId" element={<ListingPage />} />

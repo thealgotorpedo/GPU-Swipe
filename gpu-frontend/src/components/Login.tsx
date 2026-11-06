@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState, type FormEvent, type ChangeEvent } from "react";
 import { apiFetch, type LoginResponse } from "../utils/api";
 import { saveSession } from "../utils/session";
@@ -165,6 +166,7 @@ function Login() {
         {!isRegisterMode ? (
           /* Login Form */
           <form onSubmit={doLogin}>
+            <p><Link to="/forgot-password">Forgot password?</Link></p>
             <div className="form-floating mb-3">
               <input
                 type="text"
@@ -215,7 +217,7 @@ function Login() {
               ) : (
                 <>
                   <i className="bi bi-box-arrow-in-right" aria-hidden="true"></i>
-                  <span>Do It</span>
+                  <span>Log in</span>
                 </>
               )}
             </button>
