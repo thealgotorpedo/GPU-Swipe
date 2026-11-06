@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema(
       required: true
     },
 
+    displayName: { type: String, trim: true, default: "", maxlength: 100 },
+    bio: { type: String, default: "", maxlength: 1000 },
+    contactEmail: { type: String, default: "", maxlength: 254 },
+    contactPhone: { type: String, default: "", maxlength: 40 },
+
     sellerRating: {
       average: {
         type: Number,

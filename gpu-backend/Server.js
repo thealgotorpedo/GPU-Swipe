@@ -383,6 +383,8 @@ app.get("/api/listings", requireAuth, async (req, res) => {
   }
 });
 
+require("./routes/profile")(app, requireAuth);
+
 async function startServer() {
   try {
     if (!process.env.JWT_SECRET) {
