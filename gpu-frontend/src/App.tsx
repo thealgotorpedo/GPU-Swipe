@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Navigate, Routes } from "react-router-d
 import "./App.css";
 
 import LoginPage from "./pages/LoginPage";
+import ListingPage from "./pages/ListingPage";
 import Marketplace from "./components/Marketplace";
 import ListingUI from "./components/ListingUI";
 import Profile from "./components/Profile";
@@ -20,6 +21,7 @@ function App() {
         <Route path="/" element={<LoginPage />} />
         <Route path="/listings" element={<RequireLogin><ListingsPage /></RequireLogin>}>
           <Route index element={<Marketplace />} />
+          <Route path=":listingId" element={<ListingPage />} />
           <Route path="new" element={<ListingUI />} />
           <Route path="profile" element={<Profile />} />
         </Route>
