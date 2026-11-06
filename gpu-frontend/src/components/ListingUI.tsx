@@ -52,6 +52,7 @@ function ListingUI() {
 
   async function handleCreate(event: FormEvent): Promise<void> {
     event.preventDefault();
+    if (readingPhotos || isSaving) return;
     setIsSaving(true);
     setFormFeedback(null);
 

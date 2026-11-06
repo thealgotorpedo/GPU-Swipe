@@ -395,7 +395,8 @@ require("./routes/passwordReset")(app);
 app.use((error, req, res, next) => {
   console.error("API request failed:", error.message);
   if (res.headersSent) return next(error);
-  res.status(error.status === 400 ? 400 : 500).json({ error: error.status === 400 ? "Invalid request body." : "An unexpected error occurred." });
+  const status = [400, 413].includes(error.status) ? error.status : 500;
+  res.status(status).json({ error: status === 413 ? "Uploaded request is too large." : status === 400 ? "Invalid request body." : "An unexpected error occurred." });
 });
 
 async function startServer() {
