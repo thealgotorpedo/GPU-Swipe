@@ -1,0 +1,52 @@
+# Dependencies and bundled runtimes (install these on the target machine).
+node_modules/
+/gpu-backend/runtime-files/
+
+# Generated builds and test output.
+dist/
+dist-ssr/
+build/
+coverage/
+.nyc_output/
+cypress/screenshots/
+cypress/videos/
+*.tsbuildinfo
+
+# Local configuration and secrets. Commit sanitized examples instead.
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+*.pem
+*.key
+*.p12
+*.pfx
+.aws/
+
+# Logs, database files, and database exports.
+logs/
+*.log
+*.sqlite
+*.sqlite3
+*.db
+*.bson
+*.archive
+dump/
+
+# Local editor, agent, and operating system files.
+.idea/
+.vscode/
+.codex/
+.cursor/
+.agents/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Local source backups.
+*.before-*
+*.bak
+*.orig
+*~
