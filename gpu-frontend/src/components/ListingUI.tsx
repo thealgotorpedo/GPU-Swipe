@@ -11,6 +11,9 @@ function ListingUI() {
   const [isSaving, setIsSaving] = useState(false);
   const [formFeedback, setFormFeedback] = useState<Feedback>(null);
 
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [readingPhotos, setReadingPhotos] = useState(false);
+  const [photoInputKey, setPhotoInputKey] = useState(0);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState("used");
@@ -71,6 +74,7 @@ function ListingUI() {
         method: "POST",
         body: {
           title,
+          imageUrls,
           priceCents: Math.round(dollars * 100),
           condition,
           modelName,
@@ -87,6 +91,8 @@ function ListingUI() {
 
       setListings((current) => [res.data, ...current]);
       setLoadMessage(`${listings.length + 1} listing(s)`);
+      setImageUrls([]);
+      setPhotoInputKey(key => key + 1);
       setTitle("");
       setPrice("");
       setCondition("used");
@@ -148,7 +154,27 @@ function ListingUI() {
             <label htmlFor="condition">Condition</label>
           </div>
 
-          <button id="createListingButton" type="submit" className="btn btn-primary w-100" disabled={isSaving}>
+          <div className="mb-3">
+            <label htmlFor="photos" className="form-label">Seller photos (up to 4, maximum 1 MB each)</label>
+            <input key={photoInputKey} id="photos" className="form-control" type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={isSaving || readingPhotos} onChange={async e => {
+              const files = Array.from(e.target.files || []);
+              setImageUrls([]);
+              if (files.length > 4 || files.some(file => file.size > 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) {
+                setFormFeedback({ text: "Choose up to four JPEG, PNG, or WebP photos, at most 1 MB each.", isError: true });
+                e.target.value = ""; return;
+              }
+              setReadingPhotos(true);
+              try {
+                const urls = await Promise.all(files.map(file => new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file);
+                })));
+                setImageUrls(urls); setFormFeedback(null);
+              } catch { setFormFeedback({ text: "Could not read photos. Please choose them again.", isError: true }); }
+              finally { setReadingPhotos(false); }
+            }} />
+            <div className="d-flex gap-2 mt-2 flex-wrap">{imageUrls.map((url, i) => <img key={i} src={url} alt={`Upload preview ${i + 1}`} width={100} height={80} style={{ objectFit: "contain" }} />)}</div>
+          </div>
+          <button id="createListingButton" type="submit" className="btn btn-primary w-100" disabled={isSaving || readingPhotos}>
             {isSaving ? "Saving..." : "Create listing"}
           </button>
 
