@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Route, Navigate, Routes } from "react-router-d
 import "./App.css";
 
 import LoginPage from "./pages/LoginPage";
+import Marketplace from "./components/Marketplace";
+import ListingUI from "./components/ListingUI";
+import LoggedInName from "./components/LoggedInName";
 import ListingsPage from "./pages/ListingsPage";
 import { getSession } from "./utils/session";
 
@@ -15,7 +18,11 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LoginPage />} />
-        <Route path="/listings" element={<RequireLogin><ListingsPage /></RequireLogin>} />
+        <Route path="/listings" element={<RequireLogin><ListingsPage /></RequireLogin>}>
+          <Route index element={<Marketplace />} />
+          <Route path="new" element={<ListingUI />} />
+          <Route path="profile" element={<LoggedInName />} />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

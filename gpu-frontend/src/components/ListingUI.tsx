@@ -22,7 +22,7 @@ function ListingUI() {
   useEffect(() => {
     let cancelled = false;
 
-    apiFetch<ListingData[]>("api/listings")
+    apiFetch<ListingData[]>("api/listings?mine=true")
       .then((res) => {
         if (cancelled) return;
         if (res.ok) {

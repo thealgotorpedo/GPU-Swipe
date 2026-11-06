@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 export interface GraphicsCardSummary {
   _id?: string;
   modelName?: string;
@@ -8,6 +9,8 @@ export interface GraphicsCardSummary {
 
 export interface ListingData {
   _id?: string;
+  sellerId?: string;
+  imageUrls?: string[];
   title?: string;
   priceCents?: number;
   currency?: string;
@@ -31,7 +34,7 @@ function ListingList({ listings }: ListingListProps) {
   if (!listings.length) {
     return (
       <p id="listingEmpty" className="text-secondary mb-0">
-        You have not created any listings yet.
+        No listings found.
       </p>
     );
   }
@@ -44,7 +47,7 @@ function ListingList({ listings }: ListingListProps) {
           <article key={listing._id} className="border rounded-3 bg-white shadow-sm p-3">
             <div className="d-flex flex-column flex-md-row justify-content-between gap-2">
               <div>
-                <h3 className="h5 mb-1">{listing.title || "Untitled listing"}</h3>
+                <h3 className="h5 mb-1"><Link to={`/listings/${listing._id}`}>{listing.title || "Untitled listing"}</Link></h3>
                 <p className="mb-1 text-body-secondary">
                   {[gpu?.gpuManufacturer, gpu?.modelName].filter(Boolean).join(" ") || "Graphics processor"}
                   {gpu?.vramGB ? ` · ${gpu.vramGB} GB` : ""}
@@ -55,7 +58,7 @@ function ListingList({ listings }: ListingListProps) {
               </div>
               <div className="text-md-end">
                 <div className="fw-semibold">{formatPrice(listing.priceCents, listing.currency)}</div>
-                <div className="small text-secondary text-capitalize">{listing.condition}</div>
+                <div className="small text-secondary text-capitalize">{listing.condition} · {listing.status}</div>
               </div>
             </div>
           </article>
