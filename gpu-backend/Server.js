@@ -386,6 +386,8 @@ app.get("/api/listings", requireAuth, async (req, res) => {
 require("./routes/profile")(app, requireAuth);
 require("./routes/listingDetails")(app, requireAuth, presentListing);
 
+require("./routes/ratings")(app, requireAuth);
+
 async function startServer() {
   try {
     if (!process.env.JWT_SECRET) {
@@ -394,6 +396,7 @@ async function startServer() {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
+    await require("./models/Rating").createIndexes();
     console.log("Connected to MongoDB");
 
     app.listen(PORT, "127.0.0.1", () => {

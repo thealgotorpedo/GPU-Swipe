@@ -14,6 +14,7 @@ module.exports = (app, requireAuth, presentListing) => {
     const [card, seller] = await Promise.all([
       GraphicsCard.findById(listing.graphicsCardId), User.findById(listing.sellerId)
     ]);
+    if (seller) seller.sellerRating = await require("./ratings").sellerRating(seller._id);
     res.json({ ...presentListing(listing, card), seller: seller && !seller.isDisabled ? publicProfile(seller) : null });
   });
   app.patch("/api/listings/:listingId/status", requireAuth, async (req, res) => {

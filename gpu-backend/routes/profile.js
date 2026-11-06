@@ -10,7 +10,9 @@ function publicProfile(user) {
 }
 module.exports = (app, requireAuth) => {
   app.get("/api/profile", requireAuth, async (req, res) => {
-    res.json(publicProfile(req.user));
+    const profile = publicProfile(req.user);
+    profile.sellerRating = await require("./ratings").sellerRating(req.user._id);
+    res.json(profile);
   });
   app.patch("/api/profile", requireAuth, async (req, res) => {
     const limits = { displayName: 100, bio: 1000, contactEmail: 254, contactPhone: 40 };
@@ -26,7 +28,9 @@ module.exports = (app, requireAuth) => {
       return res.status(400).json({ error: "Enter a valid public contact email." });
     }
     const user = await User.findByIdAndUpdate(req.user._id, { $set: changes }, { new: true, runValidators: true });
-    res.json(publicProfile(user));
+    const profile = publicProfile(user);
+    profile.sellerRating = await require("./ratings").sellerRating(user._id);
+    res.json(profile);
   });
 };
 module.exports.publicProfile = publicProfile;
