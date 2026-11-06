@@ -5,7 +5,7 @@ import "./App.css";
 import LoginPage from "./pages/LoginPage";
 import Marketplace from "./components/Marketplace";
 import ListingUI from "./components/ListingUI";
-import LoggedInName from "./components/LoggedInName";
+import Profile from "./components/Profile";
 import ListingsPage from "./pages/ListingsPage";
 import { getSession } from "./utils/session";
 
@@ -21,7 +21,7 @@ function App() {
         <Route path="/listings" element={<RequireLogin><ListingsPage /></RequireLogin>}>
           <Route index element={<Marketplace />} />
           <Route path="new" element={<ListingUI />} />
-          <Route path="profile" element={<LoggedInName />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
