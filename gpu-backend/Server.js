@@ -11,7 +11,7 @@ const Listing = require("./models/Listing");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: "6mb" }));
 
 const LISTING_CONDITIONS = new Set(["new", "used", "refurbished"]);
 
@@ -305,6 +305,9 @@ app.post("/api/listings", requireAuth, async (req, res) => {
         });
       }
       imageUrls = body.imageUrls.map((url) => url.trim()).filter(Boolean);
+      if (imageUrls.length > 4 || imageUrls.some(url => !require("./utils/images").validImage(url))) {
+        return res.status(400).json({ error: "Use up to four JPEG, PNG, or WebP photos of at most 1 MB each, or HTTPS image URLs." });
+      }
     }
 
     createdGraphicsCard = await GraphicsCard.create({
