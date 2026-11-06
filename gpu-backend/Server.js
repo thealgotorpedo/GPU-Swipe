@@ -384,6 +384,7 @@ app.get("/api/listings", requireAuth, async (req, res) => {
 });
 
 require("./routes/profile")(app, requireAuth);
+require("./routes/listingDetails")(app, requireAuth, presentListing);
 
 async function startServer() {
   try {
