@@ -15,9 +15,9 @@ app.use(express.json());
 
 const LISTING_CONDITIONS = new Set(["new", "used", "refurbished"]);
 
-function signToken(userId) {
+function signToken(userId, tokenVersion = 0) {
   return jwt.sign(
-    { sub: userId.toString() },
+    { sub: userId.toString(), version: tokenVersion },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
@@ -45,7 +45,7 @@ async function requireAuth(req, res, next) {
 
     const user = await User.findById(payload.sub);
 
-    if (!user || user.isDisabled) {
+    if (!user || user.isDisabled || (payload.version ?? 0) !== (user.tokenVersion ?? 0)) {
       return res.status(401).json({ error: "Invalid or expired token." });
     }
 
@@ -226,7 +226,7 @@ app.post("/api/login", async (req, res) => {
 
     return res.status(200).json({
       message: "Login successful.",
-      token: signToken(user._id),
+      token: signToken(user._id, user.tokenVersion),
       user: {
         id: user._id,
         firstName: user.firstName,
@@ -387,6 +387,13 @@ require("./routes/profile")(app, requireAuth);
 require("./routes/listingDetails")(app, requireAuth, presentListing);
 
 require("./routes/ratings")(app, requireAuth);
+
+require("./routes/passwordReset")(app);
+app.use((error, req, res, next) => {
+  console.error("API request failed:", error.message);
+  if (res.headersSent) return next(error);
+  res.status(error.status === 400 ? 400 : 500).json({ error: error.status === 400 ? "Invalid request body." : "An unexpected error occurred." });
+});
 
 async function startServer() {
   try {

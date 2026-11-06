@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema(
       required: true
     },
 
+    tokenVersion: { type: Number, default: 0 },
+    resetTokenHash: { type: String, select: false },
+    resetTokenExpires: { type: Date, select: false },
     displayName: { type: String, trim: true, default: "", maxlength: 100 },
     bio: { type: String, default: "", maxlength: 1000 },
     contactEmail: { type: String, default: "", maxlength: 254 },
