@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import RateSeller from "../components/RateSeller";
 import { Link, useParams } from "react-router-dom";
 import { apiFetch } from "../utils/api";
 import { getSession } from "../utils/session";
@@ -54,6 +55,7 @@ export default function ListingPage() {
         {listing.seller.contactPhone && <p>Phone: {listing.seller.contactPhone}</p>}
         {!listing.seller.contactEmail && !listing.seller.contactPhone && <p>This seller has not shared contact details.</p>}
       </div> : <p>Seller unavailable.</p>}
+      {listing.seller && getSession()?.id !== listing.sellerId && <RateSeller key={listingId} listingId={listingId!} onRated={sellerRating => setListing({ ...listing, seller: listing.seller ? { ...listing.seller, sellerRating } : null })} />}
       {getSession()?.id === listing.sellerId && <button className="btn btn-outline-primary" disabled={busy} onClick={toggleStatus}>
         {busy ? "Saving…" : listing.status === "sold" ? "Mark as available" : "Mark as sold"}
       </button>}
