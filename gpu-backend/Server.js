@@ -246,6 +246,7 @@ app.post("/api/login", async (req, res) => {
 function presentListing(listing, graphicsCard) {
   return {
     _id: listing._id,
+    sellerId: listing.sellerId,
     title: listing.title,
     priceCents: listing.priceCents,
     currency: listing.currency,
@@ -350,7 +351,17 @@ app.post("/api/listings", requireAuth, async (req, res) => {
 
 app.get("/api/listings", requireAuth, async (req, res) => {
   try {
-    const listings = await Listing.find({ sellerId: req.user._id }).sort({ createdAt: -1 });
+    const filter = req.query.mine === "true" ? { sellerId: req.user._id } : { status: "active" };
+    if (req.query.model !== undefined) {
+      if (typeof req.query.model !== "string" || req.query.model.length > 100) {
+        return res.status(400).json({ error: "Model must be at most 100 characters." });
+      }
+      const escaped = req.query.model.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const cards = await GraphicsCard.find({ modelName: { $regex: escaped, $options: "i" } }).select("_id");
+      filter.graphicsCardId = { $in: cards.map(card => card._id) };
+    }
+    const page = Math.max(1, Math.min(10000, Number.parseInt(req.query.page, 10) || 1));
+    const listings = await Listing.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * 24).limit(24);
     const graphicsCardIds = listings.map((listing) => listing.graphicsCardId);
     const graphicsCards = await GraphicsCard.find({ _id: { $in: graphicsCardIds } });
     const graphicsCardsById = new Map(
@@ -391,4 +402,5 @@ async function startServer() {
   }
 }
 
-startServer();
+if (require.main === module) startServer();
+module.exports = { app, startServer };
