@@ -1,0 +1,93 @@
+name: CI and deploy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            gpu-backend/package-lock.json
+            gpu-frontend/package-lock.json
+      - name: Test API
+        working-directory: gpu-backend
+        run: |
+          npm ci
+          npm test
+      - name: Build frontend
+        working-directory: gpu-frontend
+        env:
+          VITE_API_BASE_URL: ''
+        run: |
+          npm ci
+          npm run build
+      - name: Package release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          mkdir release
+          git archive HEAD gpu-backend | tar -x -C release
+          rm -rf release/gpu-backend/test
+          mv gpu-frontend/dist release/frontend
+          tar -czf marketplace.tar.gz -C release gpu-backend frontend
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        with:
+          name: marketplace
+          path: marketplace.tar.gz
+          if-no-files-found: error
+
+  deploy:
+    needs: verify
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'))
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: marketplace-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: marketplace
+      - name: Deploy tested release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          main_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')
+          if [[ "$GITHUB_SHA" != "$main_sha" ]]; then
+            echo 'Skipping deployment because main has advanced.'
+            exit 0
+          fi
+          : "${DEPLOY_HOST:?Set the production SSH hostname or IP}"
+          : "${DEPLOY_SSH_KEY:?Set the production SSH private key}"
+          : "${DEPLOY_KNOWN_HOSTS:?Set the verified SSH known_hosts entry}"
+          umask 077
+          ssh_dir=$(mktemp -d)
+          trap 'rm -rf "$ssh_dir"' EXIT
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          ssh -T -i "$ssh_dir/key" -o IdentitiesOnly=yes -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$ssh_dir/known_hosts" \
+            -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+            -o HostKeyAlgorithms=ssh-ed25519 \
+            -- "gpu-deploy@$DEPLOY_HOST" "deploy $GITHUB_SHA" < marketplace.tar.gz

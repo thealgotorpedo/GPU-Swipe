@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root=/srv/gpu-marketplace
+service=gpu-marketplace-api.service
+site=mern.cop4331-g21.xyz
+
+if [[ ! ${SSH_ORIGINAL_COMMAND:-} =~ ^deploy\ ([0-9a-f]{40})$ ]]; then
+  echo 'Expected deploy followed by a Git commit SHA.' >&2
+  exit 2
+fi
+revision=${BASH_REMATCH[1]}
+
+umask 022
+exec 9>"$root/deploy.lock"
+flock 9
+previous=$(readlink "$root/current")
+release=$(mktemp -d "$root/releases/$revision.XXXXXXXX")
+link="$root/.current.${release##*/}"
+switched=false
+
+switch_to() {
+  ln -sfn -- "$1" "$link"
+  mv -Tf -- "$link" "$root/current"
+}
+
+health_check() {
+  local expected_frontend=$1
+  local curl_args=(--fail --silent --show-error --max-time 5 --resolve "$site:443:127.0.0.1")
+  for attempt in {1..15}; do
+    if curl "${curl_args[@]}" "https://$site/api/health" |
+        grep -Fq 'API is running' &&
+        curl "${curl_args[@]}" "https://$site/" |
+        cmp -s "$expected_frontend/index.html" -; then
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
+
+finish() {
+  local status=$?
+  trap - EXIT
+  if (( status != 0 )); then
+    if [[ "$switched" == true ]]; then
+      echo 'Deployment failed. Restoring the previous release.' >&2
+      if ! switch_to "$previous" ||
+          ! sudo -n /usr/bin/systemctl restart "$service" ||
+          ! health_check "$root/current/frontend"; then
+        echo 'Rollback could not be verified. Check the API service and Apache.' >&2
+        exit "$status"
+      fi
+    fi
+    rm -rf -- "$release"
+  fi
+  rm -f -- "$link"
+  exit "$status"
+}
+
+trap finish EXIT
+trap 'exit 1' HUP INT TERM
+
+# The GitHub job sends the archive over the restricted SSH connection.
+tar -xzf - -C "$release" --no-same-owner --no-same-permissions
+test -s "$release/frontend/index.html"
+test -s "$release/gpu-backend/Server.js"
+
+export PATH="/usr/local/bin:/usr/bin:/bin"
+npm --prefix "$release/gpu-backend" ci --omit=dev --ignore-scripts
+chmod 0755 "$release"
+switched=true
+switch_to "$release"
+sudo -n /usr/bin/systemctl restart "$service"
+health_check "$release/frontend"
+printf 'Deployed %s\n' "$revision"
