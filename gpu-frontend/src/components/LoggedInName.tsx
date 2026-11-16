@@ -14,20 +14,27 @@ function LoggedInName() {
   return (
     <div
       id="loggedInDiv"
-      className="shadow-sm border-0 rounded-4 mb-4 p-3 bg-white"
+      className="card-dark-static mb-4 p-3"
     >
       <div className="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex align-items-center gap-3">
           <div
-            className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-5"
-            style={{ width: "42px", height: "42px" }}
+            className="rounded-circle d-flex align-items-center justify-content-center text-emerald"
+            style={{
+              width: "44px",
+              height: "44px",
+              backgroundColor: "var(--bg-slate-950)",
+              border: "1px solid rgba(16, 185, 129, 0.4)",
+            }}
           >
-            <i className="bi bi-person-fill" aria-hidden="true"></i>
+            <i className="bi bi-person-fill fs-5" aria-hidden="true"></i>
           </div>
           <div>
-            <span className="text-secondary small d-block">Current Session</span>
-            <span id="userName" className="fw-semibold text-body-emphasis">
-              Logged In As {name}
+            <span className="text-muted-custom small text-uppercase" style={{ fontSize: "0.7rem", letterSpacing: "0.08em" }}>
+              Active Session
+            </span>
+            <span id="userName" className="fw-bold d-block text-slate-100">
+              {name}
             </span>
           </div>
         </div>
@@ -38,7 +45,7 @@ function LoggedInName() {
           onClick={doLogout}
         >
           <i className="bi bi-box-arrow-right" aria-hidden="true"></i>
-          Log Out
+          Sign Out
         </button>
       </div>
     </div>

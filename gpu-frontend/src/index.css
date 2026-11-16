@@ -1,44 +1,279 @@
+/* GPU Marketplace — Custom Dark Theme (Matching Reference) */
+
 :root {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #212529;
-  background-color: #f8f9fa;
+  color-scheme: dark;
+
+  /* Colors from reference */
+  --bg-slate-950: #020617;
+  --bg-slate-900: #0f172a;
+  --bg-slate-850: #131d33;
+  --border-slate-800: #1e293b;
+  --border-slate-700: #334155;
+  --text-slate-100: #f8fafc;
+  --text-slate-300: #cbd5e1;
+  --text-slate-400: #94a3b8;
+  --text-slate-500: #64748b;
+
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --cyan-400: #22d3ee;
+  --amber-400: #fbbf24;
+  --rose-400: #fb7185;
+  --rose-500: #f43f5e;
+
+  --gradient-emerald-teal: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+  --shadow-emerald-glow: 0 10px 25px -5px rgba(16, 185, 129, 0.25);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #f8f9fa;
-  color: #212529;
+  background-color: var(--bg-slate-950) !important;
+  color: var(--text-slate-100) !important;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--bg-slate-950);
 }
 
-/* Ensure focus states meet WCAG accessibility requirements */
-:focus-visible {
-  outline: 3px solid #0d6efd !important;
-  outline-offset: 2px !important;
+/* Links */
+a {
+  color: var(--emerald-400);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+a:hover {
+  color: var(--teal-400);
 }
 
-.btn:focus-visible, .form-control:focus-visible {
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.35) !important;
+/* Typography Utilities */
+.text-emerald { color: var(--emerald-400) !important; }
+.text-teal { color: var(--teal-400) !important; }
+.text-cyan { color: var(--cyan-400) !important; }
+.text-amber { color: var(--amber-400) !important; }
+.text-rose { color: var(--rose-400) !important; }
+.text-muted-custom { color: var(--text-slate-400) !important; }
+
+/* Gradient text */
+.text-gradient-brand {
+  background: linear-gradient(135deg, #34d399 0%, #2dd4bf 50%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.card {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* Cards & Surfaces */
+.card-dark {
+  background-color: var(--bg-slate-900) !important;
+  border: 1px solid var(--border-slate-800) !important;
+  border-radius: 1rem !important;
+  color: var(--text-slate-100) !important;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card:hover {
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+.card-dark:hover {
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.5), 0 0 15px -3px rgba(16, 185, 129, 0.15) !important;
 }
 
-.badge-custom {
-  font-size: 0.85rem;
-  padding: 0.4em 0.75em;
+.card-dark-static {
+  background-color: var(--bg-slate-900) !important;
+  border: 1px solid var(--border-slate-800) !important;
+  border-radius: 1rem !important;
+  color: var(--text-slate-100) !important;
+}
+
+.bg-slate-inset {
+  background-color: var(--bg-slate-950) !important;
+  border: 1px solid var(--border-slate-800) !important;
+  border-radius: 0.75rem;
+}
+
+/* Form Controls (Inputs, Selects, Textareas) */
+.form-control, .form-select {
+  background-color: var(--bg-slate-950) !important;
+  border: 1px solid var(--border-slate-800) !important;
+  color: var(--text-slate-100) !important;
+  border-radius: 0.75rem !important;
+  padding: 0.65rem 0.95rem;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control::placeholder {
+  color: var(--text-slate-500) !important;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: var(--bg-slate-950) !important;
+  color: var(--text-slate-100) !important;
+  border-color: var(--emerald-500) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
+  outline: none !important;
+}
+
+.form-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-slate-400);
+  margin-bottom: 0.4rem;
+}
+
+/* Primary Button (Neon Emerald Gradient) */
+.btn-primary, .btn-brand {
+  background: var(--gradient-emerald-teal) !important;
+  border: none !important;
+  color: #020617 !important;
+  font-weight: 700 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.6rem 1.25rem !important;
+  transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+  box-shadow: var(--shadow-emerald-glow);
+}
+
+.btn-primary:hover, .btn-brand:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+  color: #020617 !important;
+}
+
+.btn-primary:active, .btn-brand:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled, .btn-brand:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Outline Buttons */
+.btn-outline-primary, .btn-outline-brand {
+  background: transparent !important;
+  border: 1px solid var(--border-slate-800) !important;
+  color: var(--text-slate-300) !important;
+  border-radius: 0.75rem !important;
+  padding: 0.55rem 1.1rem !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-primary:hover, .btn-outline-brand:hover {
+  border-color: var(--emerald-500) !important;
+  color: var(--emerald-400) !important;
+  background-color: rgba(16, 185, 129, 0.08) !important;
+}
+
+.btn-outline-primary:disabled, .btn-outline-brand:disabled {
+  border-color: var(--border-slate-800) !important;
+  color: var(--text-slate-500) !important;
+  opacity: 0.5;
+}
+
+.btn-outline-danger {
+  border-color: rgba(244, 63, 94, 0.4) !important;
+  color: var(--rose-400) !important;
+  border-radius: 0.75rem !important;
+}
+
+.btn-outline-danger:hover {
+  background-color: var(--rose-500) !important;
+  border-color: var(--rose-500) !important;
+  color: #ffffff !important;
+}
+
+/* Nav Pills (Header Navigation) */
+.nav-pills-dark {
+  background-color: rgba(2, 6, 23, 0.8);
+  border: 1px solid var(--border-slate-800);
+  border-radius: 0.9rem;
+  padding: 0.35rem;
+  display: inline-flex;
+}
+
+.nav-pills-dark .nav-link {
+  color: var(--text-slate-400);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.65rem;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-pills-dark .nav-link:hover {
+  color: var(--text-slate-100);
+  background-color: rgba(15, 23, 42, 0.8);
+}
+
+.nav-pills-dark .nav-link.active {
+  background: var(--gradient-emerald-teal);
+  color: #020617 !important;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Badges */
+.badge-pill-neon {
+  background-color: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(8px);
+  color: var(--emerald-400);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.badge-price-glow {
+  background: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-slate-700);
+}
+
+/* Alerts & Messages */
+.alert-custom-info {
+  background-color: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-slate-800);
+  color: var(--text-slate-300);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+.alert-custom-error {
+  background-color: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: var(--rose-400);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+.alert-custom-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--emerald-400);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
 }

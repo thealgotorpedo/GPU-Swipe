@@ -93,7 +93,7 @@ function ListingUI() {
       setListings((current) => [res.data, ...current]);
       setLoadMessage(`${listings.length + 1} listing(s)`);
       setImageUrls([]);
-      setPhotoInputKey(key => key + 1);
+      setPhotoInputKey((key) => key + 1);
       setTitle("");
       setPrice("");
       setCondition("used");
@@ -101,7 +101,7 @@ function ListingUI() {
       setGpuManufacturer("");
       setBoardPartner("");
       setVramGB("");
-      setFormFeedback({ text: "Listing created.", isError: false });
+      setFormFeedback({ text: "Listing created successfully!", isError: false });
     } catch (error: unknown) {
       setFormFeedback({ text: (error as Error).toString(), isError: true });
     } finally {
@@ -111,90 +111,254 @@ function ListingUI() {
 
   return (
     <div id="listingUI" className="row g-4">
-      <section className="col-lg-5">
-        <form onSubmit={handleCreate} className="border rounded-4 bg-white shadow-sm p-4">
-          <h2 className="h5 mb-3">Create a listing</h2>
-
-          <div className="form-floating mb-3">
-            <input id="listingTitle" className="form-control" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" required />
-            <label htmlFor="listingTitle">Title</label>
-          </div>
-
-          <div className="form-floating mb-3">
-            <input id="modelName" className="form-control" value={modelName} onChange={(e) => setModelName(e.target.value)} placeholder="Model" required />
-            <label htmlFor="modelName">Model</label>
-          </div>
-
-          <div className="form-floating mb-3">
-            <input id="gpuManufacturer" className="form-control" value={gpuManufacturer} onChange={(e) => setGpuManufacturer(e.target.value)} placeholder="Manufacturer" required />
-            <label htmlFor="gpuManufacturer">Manufacturer</label>
-          </div>
-
-          <div className="form-floating mb-3">
-            <input id="boardPartner" className="form-control" value={boardPartner} onChange={(e) => setBoardPartner(e.target.value)} placeholder="Board partner" />
-            <label htmlFor="boardPartner">Board partner</label>
-          </div>
-
-          <div className="row g-2 mb-3">
-            <div className="col-6 form-floating">
-              <input id="vramGB" className="form-control" inputMode="numeric" value={vramGB} onChange={(e) => setVramGB(e.target.value)} placeholder="VRAM GB" required />
-              <label htmlFor="vramGB">VRAM (GB)</label>
+      {/* Create Listing Form Column */}
+      <section className="col-12 col-lg-5">
+        <form onSubmit={handleCreate} className="card-dark-static p-4">
+          <div className="d-flex align-items-center gap-2 mb-3">
+            <div
+              className="rounded-3 d-flex align-items-center justify-content-center text-emerald"
+              style={{ width: "36px", height: "36px", backgroundColor: "var(--bg-slate-950)", border: "1px solid rgba(16, 185, 129, 0.3)" }}
+            >
+              <i className="bi bi-plus-circle-fill fs-5"></i>
             </div>
-            <div className="col-6 form-floating">
-              <input id="listingPrice" className="form-control" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price" required />
-              <label htmlFor="listingPrice">Price (USD)</label>
+            <div>
+              <h2 className="h5 fw-bold text-slate-100 mb-0">List Your GPU Card</h2>
+              <span className="text-muted-custom small" style={{ fontSize: "0.75rem" }}>
+                Post your graphics card for buyers in the marketplace
+              </span>
             </div>
           </div>
 
-          <div className="form-floating mb-4">
-            <select id="condition" className="form-select" value={condition} onChange={(e) => setCondition(e.target.value)}>
-              <option value="new">New</option>
-              <option value="used">Used</option>
-              <option value="refurbished">Refurbished</option>
-            </select>
-            <label htmlFor="condition">Condition</label>
-          </div>
-
+          {/* Title */}
           <div className="mb-3">
-            <label htmlFor="photos" className="form-label">Seller photos (up to 4, maximum 1 MB each)</label>
-            <input key={photoInputKey} id="photos" className="form-control" type="file" multiple accept="image/jpeg,image/png,image/webp" disabled={isSaving || readingPhotos} onChange={async e => {
-              const files = Array.from(e.target.files || []);
-              setImageUrls([]);
-              if (files.length > 4 || files.some(file => file.size > 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(file.type))) {
-                setFormFeedback({ text: "Choose up to four JPEG, PNG, or WebP photos, at most 1 MB each.", isError: true });
-                e.target.value = ""; return;
-              }
-              setReadingPhotos(true);
-              try {
-                const urls = await Promise.all(files.map(file => new Promise<string>((resolve, reject) => {
-                  const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = reject; reader.readAsDataURL(file);
-                })));
-                setImageUrls(urls); setFormFeedback(null);
-              } catch { setFormFeedback({ text: "Could not read photos. Please choose them again.", isError: true }); }
-              finally { setReadingPhotos(false); }
-            }} />
-            <div className="d-flex gap-2 mt-2 flex-wrap">{imageUrls.map((url, i) => <img key={i} src={url} alt={`Upload preview ${i + 1}`} width={100} height={80} style={{ objectFit: "contain" }} />)}</div>
+            <label htmlFor="listingTitle" className="form-label">
+              Listing Title
+            </label>
+            <input
+              id="listingTitle"
+              className="form-control"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. ASUS ROG Strix RTX 3080 10GB OC"
+              required
+            />
           </div>
-          <button id="createListingButton" type="submit" className="btn btn-primary w-100" disabled={isSaving || readingPhotos}>
-            {isSaving ? "Saving..." : "Create listing"}
+
+          {/* Model & Manufacturer */}
+          <div className="row g-2 mb-3">
+            <div className="col-6">
+              <label htmlFor="modelName" className="form-label">
+                Model Name
+              </label>
+              <input
+                id="modelName"
+                className="form-control"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                placeholder="e.g. RTX 3080"
+                required
+              />
+            </div>
+            <div className="col-6">
+              <label htmlFor="gpuManufacturer" className="form-label">
+                Manufacturer
+              </label>
+              <input
+                id="gpuManufacturer"
+                className="form-control"
+                value={gpuManufacturer}
+                onChange={(e) => setGpuManufacturer(e.target.value)}
+                placeholder="e.g. NVIDIA, AMD"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Board Partner & VRAM */}
+          <div className="row g-2 mb-3">
+            <div className="col-6">
+              <label htmlFor="boardPartner" className="form-label">
+                Board Partner
+              </label>
+              <input
+                id="boardPartner"
+                className="form-control"
+                value={boardPartner}
+                onChange={(e) => setBoardPartner(e.target.value)}
+                placeholder="e.g. ASUS, EVGA"
+              />
+            </div>
+            <div className="col-6">
+              <label htmlFor="vramGB" className="form-label">
+                VRAM (GB)
+              </label>
+              <input
+                id="vramGB"
+                className="form-control"
+                inputMode="numeric"
+                value={vramGB}
+                onChange={(e) => setVramGB(e.target.value)}
+                placeholder="10"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Price & Condition */}
+          <div className="row g-2 mb-3">
+            <div className="col-6">
+              <label htmlFor="listingPrice" className="form-label">
+                Price (USD $)
+              </label>
+              <input
+                id="listingPrice"
+                className="form-control"
+                inputMode="decimal"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="420"
+                required
+              />
+            </div>
+            <div className="col-6">
+              <label htmlFor="condition" className="form-label">
+                Condition
+              </label>
+              <select
+                id="condition"
+                className="form-select"
+                value={condition}
+                onChange={(e) => setCondition(e.target.value)}
+              >
+                <option value="new">Brand New / Sealed</option>
+                <option value="used">Used / Good</option>
+                <option value="refurbished">Refurbished</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Photo Dropzone */}
+          <div className="mb-4">
+            <label htmlFor="photos" className="form-label d-flex justify-content-between">
+              <span>GPU Photos (Up to 4, max 1MB each)</span>
+              {imageUrls.length > 0 && (
+                <span className="text-emerald font-monospace">{imageUrls.length} / 4 loaded</span>
+              )}
+            </label>
+            <input
+              key={photoInputKey}
+              id="photos"
+              className="form-control mb-2"
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp"
+              disabled={isSaving || readingPhotos}
+              onChange={async (e) => {
+                const files = Array.from(e.target.files || []);
+                setImageUrls([]);
+                if (
+                  files.length > 4 ||
+                  files.some(
+                    (file) =>
+                      file.size > 1024 * 1024 ||
+                      !["image/jpeg", "image/png", "image/webp"].includes(file.type)
+                  )
+                ) {
+                  setFormFeedback({
+                    text: "Choose up to four JPEG, PNG, or WebP photos, at most 1 MB each.",
+                    isError: true,
+                  });
+                  e.target.value = "";
+                  return;
+                }
+                setReadingPhotos(true);
+                try {
+                  const urls = await Promise.all(
+                    files.map(
+                      (file) =>
+                        new Promise<string>((resolve, reject) => {
+                          const reader = new FileReader();
+                          reader.onload = () => resolve(String(reader.result));
+                          reader.onerror = reject;
+                          reader.readAsDataURL(file);
+                        })
+                    )
+                  );
+                  setImageUrls(urls);
+                  setFormFeedback(null);
+                } catch {
+                  setFormFeedback({
+                    text: "Could not read photos. Please choose them again.",
+                    isError: true,
+                  });
+                } finally {
+                  setReadingPhotos(false);
+                }
+              }}
+            />
+
+            {/* Photo Previews */}
+            {imageUrls.length > 0 && (
+              <div className="d-flex gap-2 flex-wrap pt-2">
+                {imageUrls.map((url, i) => (
+                  <div
+                    key={i}
+                    className="position-relative rounded-2 overflow-hidden bg-slate-inset"
+                    style={{ width: "80px", height: "65px" }}
+                  >
+                    <img
+                      src={url}
+                      alt={`Preview ${i + 1}`}
+                      className="w-100 h-100"
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <button
+            id="createListingButton"
+            type="submit"
+            className="btn btn-primary w-100 py-2 fs-6 fw-bold text-uppercase font-monospace"
+            disabled={isSaving || readingPhotos}
+          >
+            {isSaving ? "Publishing Listing…" : readingPhotos ? "Reading Photos…" : "Publish GPU Listing"}
           </button>
 
-          {formFeedback ? (
-            <p id="listingFormResult" className={`mt-3 mb-0 ${formFeedback.isError ? "text-danger" : "text-success"}`} role="status">
+          {formFeedback && (
+            <div
+              id="listingFormResult"
+              className={`mt-3 ${formFeedback.isError ? "alert-custom-error" : "alert-custom-success"}`}
+              role="status"
+            >
               {formFeedback.text}
-            </p>
-          ) : null}
+            </div>
+          )}
         </form>
       </section>
 
-      <section className="col-lg-7">
+      {/* Seller's Existing Listings Column */}
+      <section className="col-12 col-lg-7">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h2 className="h5 mb-0">Your listings</h2>
-          <span id="listingCount" className="text-secondary small" aria-live="polite">
+          <div>
+            <h2 className="h5 fw-bold text-slate-100 mb-0">Your Active Inventory</h2>
+            <span className="text-muted-custom small font-monospace">Listings posted from this account</span>
+          </div>
+          <span id="listingCount" className="badge-pill-neon" aria-live="polite">
             {isLoading ? "Loading..." : loadMessage}
           </span>
         </div>
-        {isLoading ? null : <ListingList listings={listings} />}
+        {isLoading ? (
+          <div className="text-center py-5 card-dark-static p-4">
+            <div className="spinner-border text-emerald mb-2" role="status"></div>
+            <p className="text-muted-custom small mb-0">Loading your listings…</p>
+          </div>
+        ) : (
+          <ListingList listings={listings} />
+        )}
       </section>
     </div>
   );
