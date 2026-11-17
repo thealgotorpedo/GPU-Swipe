@@ -17,9 +17,9 @@ function LoggedInName() {
       className="card-dark-static mb-4 p-3"
     >
       <div className="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
-        <div className="d-flex align-items-center gap-3">
+        <div className="session-summary d-flex align-items-center gap-3">
           <div
-            className="rounded-circle d-flex align-items-center justify-content-center text-emerald"
+            className="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center text-emerald"
             style={{
               width: "44px",
               height: "44px",

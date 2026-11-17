@@ -46,3 +46,95 @@
   color: var(--text-slate-100);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
+
+.brand-gradient {
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+}
+
+/* Keep navigation and frequently used controls easy to reach on small screens. */
+.marketplace-nav .nav-link,
+.btn {
+  min-height: 44px;
+}
+
+.marketplace-nav .nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marketplace-search .form-control {
+  min-width: 0;
+}
+
+.marketplace-search .btn,
+.pagination-controls .btn,
+.pagination-controls > span {
+  flex-shrink: 0;
+}
+
+@media (max-width: 575.98px) {
+  .app-container {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  .marketplace-nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .marketplace-nav .nav-link {
+    border: 1px solid var(--bs-primary);
+  }
+
+  .pagination-controls {
+    gap: 0.5rem !important;
+  }
+
+  .pagination-controls .btn {
+    flex: 1 1 auto;
+  }
+
+  /* Sixteen-pixel text also prevents automatic input zoom on iPhones. */
+  .form-control,
+  .form-select {
+    font-size: 1rem;
+  }
+}
+
+/* User-entered text must wrap instead of widening cards and flex layouts. */
+.app-container,
+#loginDiv,
+main {
+  overflow-wrap: anywhere;
+}
+
+.listing-summary > div,
+.session-summary,
+.session-summary > div,
+#listingUI > section {
+  min-width: 0;
+}
+
+.listing-photo {
+  display: block;
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+}
+
+@media (max-width: 575.98px) {
+  #loggedInDiv > div {
+    align-items: stretch !important;
+  }
+
+  #logoutButton {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .listing-photo {
+    max-height: 65vh;
+  }
+}

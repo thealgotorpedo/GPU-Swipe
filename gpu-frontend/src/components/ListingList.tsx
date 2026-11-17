@@ -105,7 +105,7 @@ function ListingList({ listings }: ListingListProps) {
               </div>
 
               {/* Card Body */}
-              <div className="p-3 d-flex flex-column flex-grow-1 justify-content-between">
+              <div className="listing-summary p-3 d-flex flex-column flex-grow-1 justify-content-between">
                 <div>
                   <h3 className="h6 fw-bold mb-1 text-truncate" title={listing.title}>
                     <Link to={`/listings/${listing._id}`} className="text-slate-100 text-decoration-none">

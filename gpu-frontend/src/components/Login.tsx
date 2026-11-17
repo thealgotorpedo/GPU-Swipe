@@ -238,7 +238,7 @@ function Login() {
           /* Registration Form */
           <form onSubmit={doRegister}>
             <div className="row g-2 mb-3">
-              <div className="col-6">
+              <div className="col-12 col-sm-6">
                 <label htmlFor="regFirstName" className="form-label">
                   First Name
                 </label>
@@ -253,7 +253,7 @@ function Login() {
                   required
                 />
               </div>
-              <div className="col-6">
+              <div className="col-12 col-sm-6">
                 <label htmlFor="regLastName" className="form-label">
                   Last Name
                 </label>

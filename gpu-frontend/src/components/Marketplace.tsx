@@ -27,7 +27,6 @@ export default function Marketplace() {
       cancelled = true;
     };
   }, [query]);
-
   function search(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -53,7 +52,7 @@ export default function Marketplace() {
           </span>
         </div>
 
-        <form className="d-flex gap-2" onSubmit={search}>
+        <form className="marketplace-search d-flex flex-column flex-sm-row gap-2" onSubmit={search}>
           <div className="position-relative flex-grow-1">
             <i
               className="bi bi-search text-muted-custom position-absolute top-50 translate-middle-y ms-3"
@@ -102,7 +101,7 @@ export default function Marketplace() {
       )}
 
       {/* Pagination Footer */}
-      <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-slate-800">
+      <div className="pagination-controls d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top border-slate-800">
         <button
           className="btn btn-outline-brand d-inline-flex align-items-center gap-2"
           disabled={busy || query.page === 1}

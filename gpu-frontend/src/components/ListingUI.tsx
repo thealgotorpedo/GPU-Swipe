@@ -113,7 +113,7 @@ function ListingUI() {
     <div id="listingUI" className="row g-4">
       {/* Create Listing Form Column */}
       <section className="col-12 col-lg-5">
-        <form onSubmit={handleCreate} className="card-dark-static p-4">
+  <form onSubmit={handleCreate} className="card-dark-static p-3 p-sm-4">
           <div className="d-flex align-items-center gap-2 mb-3">
             <div
               className="rounded-3 d-flex align-items-center justify-content-center text-emerald"
@@ -146,7 +146,7 @@ function ListingUI() {
 
           {/* Model & Manufacturer */}
           <div className="row g-2 mb-3">
-            <div className="col-6">
+            <div className="col-12 col-sm-6">
               <label htmlFor="modelName" className="form-label">
                 Model Name
               </label>
@@ -159,7 +159,7 @@ function ListingUI() {
                 required
               />
             </div>
-            <div className="col-6">
+            <div className="col-12 col-sm-6">
               <label htmlFor="gpuManufacturer" className="form-label">
                 Manufacturer
               </label>
@@ -176,7 +176,7 @@ function ListingUI() {
 
           {/* Board Partner & VRAM */}
           <div className="row g-2 mb-3">
-            <div className="col-6">
+            <div className="col-12 col-sm-6">
               <label htmlFor="boardPartner" className="form-label">
                 Board Partner
               </label>
@@ -188,7 +188,7 @@ function ListingUI() {
                 placeholder="e.g. ASUS, EVGA"
               />
             </div>
-            <div className="col-6">
+            <div className="col-12 col-sm-6">
               <label htmlFor="vramGB" className="form-label">
                 VRAM (GB)
               </label>
@@ -206,7 +206,7 @@ function ListingUI() {
 
           {/* Price & Condition */}
           <div className="row g-2 mb-3">
-            <div className="col-6">
+            <div className="col-12 col-sm-6">
               <label htmlFor="listingPrice" className="form-label">
                 Price (USD $)
               </label>
@@ -220,7 +220,7 @@ function ListingUI() {
                 required
               />
             </div>
-            <div className="col-6">
+            <div className="col-12 col-sm-6">
               <label htmlFor="condition" className="form-label">
                 Condition
               </label>
@@ -342,7 +342,7 @@ function ListingUI() {
 
       {/* Seller's Existing Listings Column */}
       <section className="col-12 col-lg-7">
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
           <div>
             <h2 className="h5 fw-bold text-slate-100 mb-0">Your Active Inventory</h2>
             <span className="text-muted-custom small font-monospace">Listings posted from this account</span>

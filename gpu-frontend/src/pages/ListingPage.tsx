@@ -50,7 +50,6 @@ export default function ListingPage() {
       setBusy(false);
     }
   }
-
   const isOwner = getSession()?.id === listing?.sellerId;
   const isSold = listing?.status === "sold";
 
@@ -90,7 +89,7 @@ export default function ListingPage() {
                   <img
                     src={listing.imageUrls[selectedPhotoIndex] || listing.imageUrls[0]}
                     alt={listing.title}
-                    className="w-100 h-100"
+                    className="listing-photo"
                     style={{ objectFit: "contain" }}
                   />
                 ) : (

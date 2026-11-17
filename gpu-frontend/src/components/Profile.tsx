@@ -79,7 +79,6 @@ export default function Profile() {
       setBusy(false);
     }
   }
-
   return (
     <section>
       <LoggedInName />
@@ -195,7 +194,7 @@ export default function Profile() {
 
       <ListingList listings={listings} />
 
-      <div className="d-flex justify-content-between align-items-center mt-4 pt-3 border-top border-slate-800">
+      <div className="pagination-controls d-flex flex-wrap justify-content-between align-items-center mt-4 pt-3 border-top border-slate-800">
         <button
           className="btn btn-outline-brand d-inline-flex align-items-center gap-2"
           disabled={page === 1}
