@@ -407,7 +407,12 @@ async function startServer() {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    await require("./models/Rating").createIndexes();
+    await Promise.all([
+      require("./models/Rating").createIndexes(),
+      require("./models/Conversation").createIndexes(),
+      require("./models/Message").createIndexes(),
+      require("./models/MeetupSuggestion").createIndexes()
+    ]);
     console.log("Connected to MongoDB");
 
     app.listen(PORT, "127.0.0.1", () => {

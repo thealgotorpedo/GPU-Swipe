@@ -9,6 +9,9 @@ const User = require("../models/User");
 const Listing = require("../models/Listing");
 const GraphicsCard = require("../models/GraphicsCard");
 const Rating = require("../models/Rating");
+const Conversation = require("../models/Conversation");
+const Message = require("../models/Message");
+const MeetupSuggestion = require("../models/MeetupSuggestion");
 const { validImage } = require("../utils/images");
 const id = new mongoose.Types.ObjectId();
 const listingId = new mongoose.Types.ObjectId();
@@ -31,6 +34,55 @@ async function request(path, { method = "GET", body, auth = true, version = 0 } 
   const response = await fetch(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
   return { status: response.status, data: await response.json() };
 }
+test("messaging and meetup data models", () => {
+  assert.equal(Conversation.schema.options.collection, "conversations");
+  assert.equal(Message.schema.options.collection, "messages");
+  assert.equal(MeetupSuggestion.schema.options.collection, "meetupSuggestions");
+
+  assert.equal(Conversation.schema.path("listingId").options.ref, "Listing");
+  assert.equal(Conversation.schema.path("buyerId").options.ref, "User");
+  assert.equal(Conversation.schema.path("sellerId").options.ref, "User");
+  assert.equal(Conversation.schema.path("agreedMeetupSuggestionId").options.ref, "MeetupSuggestion");
+  assert.equal(Conversation.schema.path("closedBy").options.ref, "User");
+
+  assert.equal(Message.schema.path("conversationId").options.ref, "Conversation");
+  assert.equal(Message.schema.path("senderId").options.ref, "User");
+  assert.equal(Message.schema.path("recipientId").options.ref, "User");
+  assert.equal(Message.schema.path("body").options.maxlength, 4000);
+
+  assert.equal(MeetupSuggestion.schema.path("conversationId").options.ref, "Conversation");
+  assert.equal(MeetupSuggestion.schema.path("suggestedBy").options.ref, "User");
+  assert.deepEqual(MeetupSuggestion.schema.path("status").options.enum, ["proposed", "accepted", "declined", "withdrawn"]);
+
+  const conversation = new Conversation({ listingId: id, buyerId: id, sellerId: id });
+  assert.equal(conversation.locationSet, false);
+  assert.equal(conversation.agreedMeetupSuggestionId, null);
+  assert.equal(conversation.isClosed, false);
+  assert.equal(conversation.closedAt, null);
+  assert.equal(conversation.closedBy, null);
+
+  const suggestion = new MeetupSuggestion({ conversationId: id, suggestedBy: id, placeName: "Cafe", address: "123 Main St" });
+  assert.equal(suggestion.status, "proposed");
+  assert.equal(suggestion.notes, "");
+
+  const conversationIndexes = Conversation.schema.indexes();
+  assert.ok(conversationIndexes.some(([keys, options]) =>
+    keys.listingId === 1 && keys.buyerId === 1 && keys.sellerId === 1 && options.unique
+  ));
+  assert.ok(conversationIndexes.some(([keys]) => keys.buyerId === 1 && keys.updatedAt === -1));
+  assert.ok(conversationIndexes.some(([keys]) => keys.sellerId === 1 && keys.updatedAt === -1));
+  assert.ok(Message.schema.indexes().some(([keys]) =>
+    keys.conversationId === 1 && keys.createdAt === 1 && keys._id === 1
+  ));
+  assert.ok(Message.schema.indexes().some(([keys]) => keys.recipientId === 1 && keys.createdAt === -1));
+  assert.ok(MeetupSuggestion.schema.indexes().some(([keys, options]) =>
+    keys.conversationId === 1 && options.unique && options.partialFilterExpression?.status === "accepted"
+  ));
+
+  assert.equal(User.schema.path("conversations"), undefined);
+  assert.equal(User.schema.path("messages"), undefined);
+});
+
 test("marketplace API authorization and validation", async t => {
   stub(User, "findById", async () => user);
   try {
