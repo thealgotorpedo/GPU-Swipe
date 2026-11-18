@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import RateSeller from "../components/RateSeller";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiFetch } from "../utils/api";
 import { getSession } from "../utils/session";
 import type { ListingData } from "../components/ListingList";
-import { ratingText, type PublicProfile } from "../components/Profile";
+import { ratingText, type PublicProfile } from "../utils/profile";
 
 interface Details extends ListingData {
   seller: PublicProfile | null;
@@ -12,9 +12,11 @@ interface Details extends ListingData {
 
 export default function ListingPage() {
   const { listingId } = useParams();
+  const navigate = useNavigate();
   const [listing, setListing] = useState<Details | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [contactBusy, setContactBusy] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   useEffect(() => {
@@ -50,6 +52,25 @@ export default function ListingPage() {
       setBusy(false);
     }
   }
+
+  async function messageSeller() {
+    if (!listingId || !listing || contactBusy) return;
+    setContactBusy(true);
+    setMessage("");
+    try {
+      const result = await apiFetch<{ id: string }>("api/conversations", {
+        method: "POST",
+        body: { listingId },
+      });
+      if (result.ok) navigate(`/listings/messages/${result.data.id}`);
+      else setMessage(result.error || "Could not open a conversation with this seller.");
+    } catch {
+      setMessage("Could not connect. Please try again.");
+    } finally {
+      setContactBusy(false);
+    }
+  }
+
   const isOwner = getSession()?.id === listing?.sellerId;
   const isSold = listing?.status === "sold";
 
@@ -279,16 +300,23 @@ export default function ListingPage() {
                 </div>
               ) : (
                 listing.seller && (
-                  <RateSeller
-                    key={listingId}
-                    listingId={listingId!}
-                    onRated={(sellerRating) =>
-                      setListing({
-                        ...listing,
-                        seller: listing.seller ? { ...listing.seller, sellerRating } : null,
-                      })
-                    }
-                  />
+                  <>
+                    {listing.status === "active" && (
+                      <button className="btn btn-primary w-100 fw-bold mb-3" type="button" onClick={messageSeller} disabled={contactBusy}>
+                        <i className="bi bi-chat-dots me-2"></i>{contactBusy ? "Opening Conversation…" : "Message Seller"}
+                      </button>
+                    )}
+                    <RateSeller
+                      key={listingId}
+                      listingId={listingId!}
+                      onRated={(sellerRating) =>
+                        setListing({
+                          ...listing,
+                          seller: listing.seller ? { ...listing.seller, sellerRating } : null,
+                        })
+                      }
+                    />
+                  </>
                 )
               )}
             </div>

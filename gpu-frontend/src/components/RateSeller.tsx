@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { apiFetch } from "../utils/api";
-import type { PublicProfile } from "./Profile";
+import type { PublicProfile } from "../utils/profile";
 
 export default function RateSeller({
   listingId,

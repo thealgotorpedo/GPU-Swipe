@@ -9,6 +9,7 @@ import Marketplace from "./components/Marketplace";
 import ListingUI from "./components/ListingUI";
 import Profile from "./components/Profile";
 import ListingsPage from "./pages/ListingsPage";
+import MessagesPage from "./pages/MessagesPage";
 import { getSession } from "./utils/session";
 
 function RequireLogin({ children }: { children: ReactNode }) {
@@ -27,6 +28,8 @@ function App() {
           <Route path=":listingId" element={<ListingPage />} />
           <Route path="new" element={<ListingUI />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="messages" element={<MessagesPage />} />
+          <Route path="messages/:conversationId" element={<MessagesPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

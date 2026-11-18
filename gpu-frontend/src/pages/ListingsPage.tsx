@@ -18,6 +18,10 @@ export default function ListingsPage() {
           <i className="bi bi-person-badge-fill"></i>
           <span>My Profile</span>
         </NavLink>
+        <NavLink className="nav-link" to="/listings/messages">
+          <i className="bi bi-chat-dots-fill"></i>
+          <span>Messages</span>
+        </NavLink>
       </nav>
       <Outlet />
     </div>
