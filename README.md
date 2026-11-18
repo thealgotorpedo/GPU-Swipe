@@ -38,8 +38,21 @@ All marketplace/profile/rating endpoints require `Authorization: Bearer <token>`
 | PATCH | `/api/profile` | Update display name, bio, public email and phone only |
 | GET | `/api/listings/:listingId/rating` | Current user's submitted score or null |
 | POST | `/api/listings/:listingId/rating` | `{ "score": 1..5 }`; duplicate returns 409, self-rating 403 |
+| GET | `/api/conversations` | Current user's inbox; returns only conversations where they are buyer or seller |
+| POST | `/api/conversations` | `{ "listingId": "..." }`; create or return the buyer's existing thread for an active listing |
+| GET | `/api/conversations/:conversationId` | Thread and safe listing/other-participant summary; participants only |
+| GET | `/api/conversations/:conversationId/messages` | Up to 200 most recent messages in chronological order; participants only |
+| POST | `/api/conversations/:conversationId/messages` | `{ "body": "..." }`; send a private message, unless the conversation is closed |
+| PATCH | `/api/conversations/:conversationId/close` | Close the discussion; either participant may close, and closure is one-way |
+| GET | `/api/conversations/:conversationId/meetups` | List location suggestions for a participant's conversation |
+| POST | `/api/conversations/:conversationId/meetups` | `{ "placeName": "...", "address": "...", "notes": "..." }`; suggest or replace a location |
+| POST | `/api/conversations/:conversationId/meetups/:suggestionId/accept` | Non-proposer accepts; that participant's acceptance plus the proposer’s implied assent confirms the location |
+| POST | `/api/conversations/:conversationId/meetups/:suggestionId/decline` | Non-proposer declines a pending location suggestion |
+| DELETE | `/api/conversations/:conversationId/meetups/:suggestionId` | Proposer withdraws their pending suggestion |
 | POST | `/api/password/forgot` | `{ "email": "..." }`; send recovery link |
 | POST | `/api/password/reset` | `{ "token": "...", "password": "..." }`; consume link and replace password |
+
+Conversation APIs require authentication and scope every thread/message/location query to the signed-in buyer or seller. A suggested meetup counts as the proposer's agreement; the other participant must accept it for `locationSet` to become true. Suggesting a new location supersedes pending/accepted suggestions and clears the previous agreement. The UI shows an informational PayPal notice after agreement; the application does not process payments.
 
 **Compatibility:** `GET /api/listings` now browses all active listings. Existing clients that need only their own listings must pass `mine=true`.
 

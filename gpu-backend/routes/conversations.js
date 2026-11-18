@@ -3,6 +3,7 @@ const Conversation = require("../models/Conversation");
 const Listing = require("../models/Listing");
 const User = require("../models/User");
 const Message = require("../models/Message");
+const MeetupSuggestion = require("../models/MeetupSuggestion");
 
 function idString(value) {
   return value?._id ? value._id.toString() : value?.toString();
@@ -47,6 +48,21 @@ function presentConversation(conversation, listing, otherUser, lastMessage = nul
       senderId: idString(lastMessage.senderId),
       createdAt: lastMessage.createdAt
     } : null
+  };
+}
+
+function presentMeetupSuggestion(suggestion) {
+  return {
+    id: idString(suggestion._id),
+    conversationId: idString(suggestion.conversationId),
+    suggestedBy: idString(suggestion.suggestedBy),
+    acceptedBy: idString(suggestion.acceptedBy) ?? null,
+    placeName: suggestion.placeName,
+    address: suggestion.address,
+    notes: suggestion.notes,
+    status: suggestion.status,
+    createdAt: suggestion.createdAt,
+    updatedAt: suggestion.updatedAt
   };
 }
 
@@ -124,9 +140,9 @@ module.exports = (app, requireAuth) => {
     if (!conversation) return res.status(404).json({ error: "Conversation not found." });
 
     const messages = await Message.find({ conversationId: conversation._id })
-      .sort({ createdAt: 1, _id: 1 })
+      .sort({ createdAt: -1, _id: -1 })
       .limit(200);
-    res.json(messages.map(message => ({
+    res.json(messages.reverse().map(message => ({
       id: idString(message._id),
       conversationId: idString(message.conversationId),
       senderId: idString(message.senderId),
@@ -182,6 +198,146 @@ module.exports = (app, requireAuth) => {
     }
     const updated = await findConversation(req.params.conversationId, req.user._id);
     res.json({ isClosed: updated.isClosed, closedAt: updated.closedAt, closedBy: idString(updated.closedBy) ?? null });
+  });
+
+  app.get("/api/conversations/:conversationId/meetups", requireAuth, async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.conversationId)) {
+      return res.status(400).json({ error: "Invalid conversation ID." });
+    }
+    const conversation = await findConversation(req.params.conversationId, req.user._id);
+    if (!conversation) return res.status(404).json({ error: "Conversation not found." });
+    const suggestions = await MeetupSuggestion.find({ conversationId: conversation._id })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(100);
+    res.json(suggestions.map(presentMeetupSuggestion));
+  });
+
+  app.post("/api/conversations/:conversationId/meetups", requireAuth, async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.conversationId)) {
+      return res.status(400).json({ error: "Invalid conversation ID." });
+    }
+    const placeName = typeof req.body?.placeName === "string" ? req.body.placeName.trim() : "";
+    const address = typeof req.body?.address === "string" ? req.body.address.trim() : "";
+    const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
+    if (!placeName || placeName.length > 150 || !address || address.length > 500 || notes.length > 1000) {
+      return res.status(400).json({ error: "Provide a place name (1-150 chars), address (1-500 chars), and notes up to 1000 chars." });
+    }
+
+    const conversation = await findConversation(req.params.conversationId, req.user._id);
+    if (!conversation) return res.status(404).json({ error: "Conversation not found." });
+    if (conversation.isClosed) return res.status(409).json({ error: "This conversation is closed." });
+
+    await MeetupSuggestion.updateMany(
+      { conversationId: conversation._id, status: { $in: ["proposed", "accepted"] } },
+      { $set: { status: "superseded", acceptedBy: null } }
+    );
+    await Conversation.updateOne(
+      { _id: conversation._id, isClosed: false },
+      { $set: { locationSet: false, agreedMeetupSuggestionId: null, updatedAt: new Date() } }
+    );
+    const suggestion = await MeetupSuggestion.create({
+      conversationId: conversation._id,
+      suggestedBy: req.user._id,
+      placeName,
+      address,
+      notes,
+      status: "proposed"
+    });
+    res.status(201).json(presentMeetupSuggestion(suggestion));
+  });
+
+  app.post("/api/conversations/:conversationId/meetups/:suggestionId/accept", requireAuth, async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.conversationId) || !mongoose.isValidObjectId(req.params.suggestionId)) {
+      return res.status(400).json({ error: "Invalid conversation or meetup suggestion ID." });
+    }
+    const conversation = await findConversation(req.params.conversationId, req.user._id);
+    if (!conversation) return res.status(404).json({ error: "Conversation not found." });
+    if (conversation.isClosed) return res.status(409).json({ error: "This conversation is closed." });
+
+    const suggestion = await MeetupSuggestion.findOne({
+      _id: req.params.suggestionId,
+      conversationId: conversation._id
+    });
+    if (!suggestion) return res.status(404).json({ error: "Meetup suggestion not found." });
+    if (idString(suggestion.suggestedBy) === idString(req.user._id)) {
+      return res.status(403).json({ error: "The proposer has already agreed; the other participant must accept." });
+    }
+    if (suggestion.status !== "proposed") {
+      return res.status(409).json({ error: "This meetup suggestion is no longer pending." });
+    }
+
+    let accepted;
+    try {
+      accepted = await MeetupSuggestion.findOneAndUpdate(
+        { _id: suggestion._id, conversationId: conversation._id, status: "proposed" },
+        { $set: { status: "accepted", acceptedBy: req.user._id } },
+        { new: true, runValidators: true }
+      );
+    } catch (error) {
+      if (error.code === 11000) return res.status(409).json({ error: "Another meetup location has already been accepted." });
+      throw error;
+    }
+    if (!accepted) return res.status(409).json({ error: "This meetup suggestion is no longer pending." });
+
+    const updatedConversation = await Conversation.findOneAndUpdate(
+      { _id: conversation._id, isClosed: false },
+      { $set: { locationSet: true, agreedMeetupSuggestionId: accepted._id, updatedAt: new Date() } },
+      { new: true }
+    );
+    if (!updatedConversation) {
+      await MeetupSuggestion.updateOne(
+        { _id: accepted._id, status: "accepted" },
+        { $set: { status: "proposed", acceptedBy: null } }
+      );
+      return res.status(409).json({ error: "This conversation is closed." });
+    }
+    res.json({ suggestion: presentMeetupSuggestion(accepted), locationSet: true });
+  });
+
+  app.post("/api/conversations/:conversationId/meetups/:suggestionId/decline", requireAuth, async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.conversationId) || !mongoose.isValidObjectId(req.params.suggestionId)) {
+      return res.status(400).json({ error: "Invalid conversation or meetup suggestion ID." });
+    }
+    const conversation = await findConversation(req.params.conversationId, req.user._id);
+    if (!conversation) return res.status(404).json({ error: "Conversation not found." });
+    if (conversation.isClosed) return res.status(409).json({ error: "This conversation is closed." });
+
+    const suggestion = await MeetupSuggestion.findOne({
+      _id: req.params.suggestionId,
+      conversationId: conversation._id
+    });
+    if (!suggestion) return res.status(404).json({ error: "Meetup suggestion not found." });
+    if (idString(suggestion.suggestedBy) === idString(req.user._id)) {
+      return res.status(403).json({ error: "The proposer cannot decline their own suggestion." });
+    }
+    const declined = await MeetupSuggestion.findOneAndUpdate(
+      { _id: suggestion._id, conversationId: conversation._id, status: "proposed" },
+      { $set: { status: "declined" } },
+      { new: true, runValidators: true }
+    );
+    if (!declined) return res.status(409).json({ error: "This meetup suggestion is no longer pending." });
+    res.json(presentMeetupSuggestion(declined));
+  });
+
+  app.delete("/api/conversations/:conversationId/meetups/:suggestionId", requireAuth, async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.conversationId) || !mongoose.isValidObjectId(req.params.suggestionId)) {
+      return res.status(400).json({ error: "Invalid conversation or meetup suggestion ID." });
+    }
+    const conversation = await findConversation(req.params.conversationId, req.user._id);
+    if (!conversation) return res.status(404).json({ error: "Conversation not found." });
+    if (conversation.isClosed) return res.status(409).json({ error: "This conversation is closed." });
+    const suggestion = await MeetupSuggestion.findOneAndUpdate(
+      {
+        _id: req.params.suggestionId,
+        conversationId: conversation._id,
+        suggestedBy: req.user._id,
+        status: "proposed"
+      },
+      { $set: { status: "withdrawn" } },
+      { new: true, runValidators: true }
+    );
+    if (!suggestion) return res.status(404).json({ error: "Pending meetup suggestion not found." });
+    res.json(presentMeetupSuggestion(suggestion));
   });
 };
 

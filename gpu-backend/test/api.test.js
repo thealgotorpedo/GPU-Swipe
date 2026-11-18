@@ -52,7 +52,8 @@ test("messaging and meetup data models", () => {
 
   assert.equal(MeetupSuggestion.schema.path("conversationId").options.ref, "Conversation");
   assert.equal(MeetupSuggestion.schema.path("suggestedBy").options.ref, "User");
-  assert.deepEqual(MeetupSuggestion.schema.path("status").options.enum, ["proposed", "accepted", "declined", "withdrawn"]);
+  assert.equal(MeetupSuggestion.schema.path("acceptedBy").options.ref, "User");
+  assert.deepEqual(MeetupSuggestion.schema.path("status").options.enum, ["proposed", "accepted", "declined", "withdrawn", "superseded"]);
 
   const conversation = new Conversation({ listingId: id, buyerId: id, sellerId: id });
   assert.equal(conversation.locationSet, false);
@@ -190,6 +191,84 @@ test("private conversation and messaging endpoints", async t => {
       assert.equal(savedMessage.recipientId, sellerId);
       assert.equal(savedMessage.body, "Hello there");
       assert.equal(result.data.body, "Hello there");
+    });
+  } finally { restore(); }
+});
+
+test("meetup proposals require agreement from both conversation participants", async t => {
+  stub(User, "findById", async () => user);
+  const conversation = { _id: listingId, buyerId: id, sellerId, isClosed: false };
+  const suggestionId = new mongoose.Types.ObjectId();
+  try {
+    await t.test("validates suggestion text and rejects closed threads", async () => {
+      assert.equal((await request(`/api/conversations/${listingId}/meetups`, {
+        method: "POST", body: { placeName: "", address: "123 Main St" }
+      })).status, 400);
+      stub(Conversation, "findOne", async () => ({ ...conversation, isClosed: true }));
+      assert.equal((await request(`/api/conversations/${listingId}/meetups`, {
+        method: "POST", body: { placeName: "Library", address: "123 Main St" }
+      })).status, 409);
+    });
+
+    await t.test("creates a proposal after resetting the current agreement", async () => {
+      let proposal;
+      stub(Conversation, "findOne", async () => conversation);
+      stub(MeetupSuggestion, "updateMany", async (filter, update) => {
+        assert.deepEqual(filter.status.$in, ["proposed", "accepted"]);
+        assert.equal(update.$set.status, "superseded");
+      });
+      stub(Conversation, "updateOne", async (_, update) => {
+        assert.equal(update.$set.locationSet, false);
+        assert.equal(update.$set.agreedMeetupSuggestionId, null);
+      });
+      stub(MeetupSuggestion, "create", async fields => {
+        proposal = fields;
+        return { ...fields, _id: suggestionId, createdAt: new Date("2026-01-01T00:00:00Z") };
+      });
+      const result = await request(`/api/conversations/${listingId}/meetups`, {
+        method: "POST", body: { placeName: "  Central Library ", address: " 123 Main St ", notes: " Front entrance " }
+      });
+      assert.equal(result.status, 201);
+      assert.equal(proposal.suggestedBy, id);
+      assert.equal(proposal.placeName, "Central Library");
+      assert.equal(proposal.address, "123 Main St");
+      assert.equal(proposal.notes, "Front entrance");
+      assert.equal(result.data.status, "proposed");
+      assert.equal(result.data.acceptedBy, null);
+    });
+
+    await t.test("proposer cannot provide the second acceptance", async () => {
+      stub(Conversation, "findOne", async () => conversation);
+      stub(MeetupSuggestion, "findOne", async () => ({
+        _id: suggestionId, conversationId: listingId, suggestedBy: id, status: "proposed"
+      }));
+      assert.equal((await request(`/api/conversations/${listingId}/meetups/${suggestionId}/accept`, {
+        method: "POST"
+      })).status, 403);
+    });
+
+    await t.test("other participant accepts and sets the agreed location", async () => {
+      let acceptedBy, conversationChanges;
+      stub(Conversation, "findOne", async () => conversation);
+      stub(MeetupSuggestion, "findOne", async () => ({
+        _id: suggestionId, conversationId: listingId, suggestedBy: sellerId, status: "proposed"
+      }));
+      stub(MeetupSuggestion, "findOneAndUpdate", async (filter, update) => {
+        assert.equal(filter.status, "proposed");
+        acceptedBy = update.$set.acceptedBy;
+        return { _id: suggestionId, conversationId: listingId, suggestedBy: sellerId, acceptedBy, placeName: "Library", address: "123 Main St", notes: "", status: "accepted" };
+      });
+      stub(Conversation, "findOneAndUpdate", async (filter, update) => {
+        assert.equal(filter.isClosed, false);
+        conversationChanges = update.$set;
+        return { ...conversation, locationSet: true, agreedMeetupSuggestionId: suggestionId };
+      });
+      const result = await request(`/api/conversations/${listingId}/meetups/${suggestionId}/accept`, { method: "POST" });
+      assert.equal(result.status, 200);
+      assert.equal(acceptedBy, id);
+      assert.equal(conversationChanges.locationSet, true);
+      assert.equal(conversationChanges.agreedMeetupSuggestionId, suggestionId);
+      assert.equal(result.data.locationSet, true);
     });
   } finally { restore(); }
 });

@@ -14,6 +14,12 @@ const meetupSuggestionSchema = new mongoose.Schema(
       required: true
     },
 
+    acceptedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null
+    },
+
     placeName: {
       type: String,
       required: true,
@@ -37,7 +43,7 @@ const meetupSuggestionSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["proposed", "accepted", "declined", "withdrawn"],
+      enum: ["proposed", "accepted", "declined", "withdrawn", "superseded"],
       default: "proposed"
     }
   },
