@@ -388,6 +388,7 @@ app.get("/api/listings", requireAuth, async (req, res) => {
 
 require("./routes/profile")(app, requireAuth);
 require("./routes/listingDetails")(app, requireAuth, presentListing);
+require("./routes/conversations")(app, requireAuth);
 
 require("./routes/ratings")(app, requireAuth);
 

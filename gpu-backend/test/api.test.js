@@ -136,6 +136,64 @@ test("marketplace API authorization and validation", async t => {
     });
   } finally { restore(); }
 });
+
+test("private conversation and messaging endpoints", async t => {
+  stub(User, "findById", async () => user);
+  try {
+    await t.test("requires authentication and validates listing IDs", async () => {
+      assert.equal((await request("/api/conversations", { auth: false })).status, 401);
+      assert.equal((await request("/api/conversations", { method: "POST", body: { listingId: "bad" } })).status, 400);
+    });
+
+    await t.test("does not allow a seller to message themselves", async () => {
+      stub(Listing, "findById", async () => ({ _id: listingId, status: "active", sellerId: id }));
+      assert.equal((await request("/api/conversations", { method: "POST", body: { listingId: listingId.toString() } })).status, 403);
+    });
+
+    await t.test("scopes message history to conversation participants", async () => {
+      stub(Conversation, "findOne", async filter => {
+        assert.equal(filter._id, listingId.toString());
+        assert.ok(filter.$or.some(participant => participant.buyerId === id));
+        return null;
+      });
+      assert.equal((await request(`/api/conversations/${listingId}/messages`)).status, 404);
+      assert.equal((await request("/api/conversations/nope/messages")).status, 400);
+    });
+
+    await t.test("validates messages and blocks closed conversations", async () => {
+      assert.equal((await request(`/api/conversations/${listingId}/messages`, {
+        method: "POST", body: { body: "   " }
+      })).status, 400);
+
+      stub(Conversation, "findOne", async () => ({
+        _id: listingId, buyerId: id, sellerId, isClosed: true
+      }));
+      assert.equal((await request(`/api/conversations/${listingId}/messages`, {
+        method: "POST", body: { body: "Hello" }
+      })).status, 409);
+    });
+
+    await t.test("stores a message once with the other participant as recipient", async () => {
+      const conversation = { _id: listingId, buyerId: id, sellerId, isClosed: false };
+      let savedMessage;
+      stub(Conversation, "findOne", async () => conversation);
+      stub(Message, "create", async fields => {
+        savedMessage = fields;
+        return { ...fields, _id: new mongoose.Types.ObjectId(), createdAt: new Date("2026-01-01T00:00:00Z") };
+      });
+      stub(Conversation, "updateOne", async () => ({ modifiedCount: 1 }));
+      const result = await request(`/api/conversations/${listingId}/messages`, {
+        method: "POST", body: { body: "  Hello there  ", senderId: sellerId.toString() }
+      });
+      assert.equal(result.status, 201);
+      assert.equal(savedMessage.senderId, id);
+      assert.equal(savedMessage.recipientId, sellerId);
+      assert.equal(savedMessage.body, "Hello there");
+      assert.equal(result.data.body, "Hello there");
+    });
+  } finally { restore(); }
+});
+
 test("password reset sends link, stores only hash, and atomically consumes token", async () => {
   process.env.RESEND_API_KEY = "test";
   process.env.RESET_EMAIL_FROM = "test@example.com";
